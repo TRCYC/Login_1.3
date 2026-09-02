@@ -84,6 +84,23 @@ The command writes `config/login-rendering.generated.json`, which is ignored bec
 
 The generated JavaScript entry is `dist/assets/main.<hash>.js` and the generated stylesheet is `dist/assets/shared/style.<hash>.css`. Upload every file under `dist/assets`, including the shared chunks and `login/index.<hash>.js`, preserving the directory structure. The checked-in `config/login-rendering.json` is only a placeholder template; never apply it before replacing the CDN URL, filename hashes, and SRI values.
 
+### GitHub Pages
+
+This repository includes `.github/workflows/deploy-pages.yml`. It builds and publishes the complete `dist` directory whenever `master` changes. To enable it in GitHub, open `Settings > Pages`, select `GitHub Actions` as the source, and push to `master`. The site URL will be:
+
+```text
+https://TRCYC.github.io/Login_1.3/
+```
+
+Verify that the Actions deployment has completed before generating the Auth0 rendering configuration. Use the Pages URL as `ACUL_PUBLIC_BASE_URL` without a trailing slash:
+
+```sh
+ACUL_PUBLIC_BASE_URL='https://TRCYC.github.io/Login_1.3' \
+  npm run build:rendering
+```
+
+The GitHub Pages site is public HTTPS hosting for the ACUL assets; it does not itself configure Auth0. After the site is live, apply `config/login-rendering.generated.json` with `auth0 acul config set login` as described below.
+
 ## Deploy to the Local tenant
 
 Only use connected mode on the Local/development tenant. It changes live Auth0 rendering settings.
