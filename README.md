@@ -1,0 +1,178 @@
+# RCYC Auth0 Advanced Customization
+
+This project is the ACUL implementation for the `login` screen of:
+
+```text
+Application: RCYC Web Guest Login - Local
+Client ID: 8wxI3w8yllBrMuv2OQbCuraVJI6gyf4g
+Tenant: dev-t63fs8uohee0yl4k.us.auth0.com
+Custom domain: auth-local.ritzcarltonyachtcollection.com
+```
+
+It exists separately from `Web/auth0/universal-login-template.html` because the Standard Universal Login widget cannot reproduce the Figma layout. This ACUL screen owns the form markup, field validation presentation, button layout, responsive behavior, and legal footer while the Auth0 ACUL SDK owns credential submission and transaction navigation.
+
+## Project files
+
+- `src/main.jsx`: minimal React bootstrap that is safe before Auth0 context exists.
+- `src/App.jsx`: selects the Context Inspector or production screen manager.
+- `src/DevScreenManager.jsx`: waits for local Context Inspector data before loading the login SDK.
+- `src/ProdScreenManager.jsx`: waits for the Auth0 page context before loading the login screen.
+- `src/screens/login/index.jsx`: Auth0 `login` screen and SDK-backed form behavior.
+- `src/styles.css`: desktop/mobile RCYC styling.
+- `public/manifest.json`: Universal Login Context Inspector screen map.
+- `public/screens/login/login/default.json`: sanitized Local-app preview context.
+- `config/login-rendering.json`: deployable rendering configuration template with placeholders.
+- `config/custom-text-login-en.json`: desired English login copy for the Custom Text API.
+- `scripts/generate-rendering-config.mjs`: generates SRI hashes after a production build.
+- `scripts/validate-acul.mjs`: checks project structure, screen hooks, Local-app filter, and unsafe code.
+
+## Local development
+
+Requirements: Node.js 20 or later, npm, and the Auth0 CLI.
+
+```sh
+cd /home/laureano/Code/Rcyc/auth0-acul
+npm install
+npm run validate
+npm run build
+```
+
+For the Auth0 Universal Login Context Inspector, use the Local tenant and run:
+
+```sh
+auth0 acul dev \
+  --tenant dev-t63fs8uohee0yl4k.us.auth0.com \
+  --dir /home/laureano/Code/Rcyc/auth0-acul \
+  --port 55444 \
+  --screens login
+```
+
+The active project directory is `/home/laureano/Code/Rcyc/auth0-acul`. Run the command from that directory, or use the project shortcut:
+
+```sh
+cd /home/laureano/Code/Rcyc/auth0-acul
+npm run dev:login
+```
+
+Keep `--screens login` in the command. If the screen filter is omitted, the Auth0 CLI can open the default `login-id` screen from the global ACUL manifest instead of this project's `login / login` screen.
+
+Use the inspector's local context source and select the `login` screen. The fixture under `public/screens/login/login/default.json` represents the Local application and includes signup only for visual parity with the supplied Figma reference. The Auth0 tenant configuration remains authoritative for whether signup is available.
+
+The entry point first loads the Context Inspector manager and only loads `@auth0/auth0-acul-react/login` after `window.universal_login_context` is available. This ordering is required by the ACUL SDK. If a browser tab from an earlier build is blank, close it and restart the command so the latest assets are served.
+
+The local Context Inspector works without a tenant. The CLI connected-mode server uses `http://localhost:55444`, but the real Auth0 authorization page is HTTPS; browsers block those injected module scripts as mixed content. Therefore a white page in the real authorization flow is expected with direct connected mode in normal browsers. Use an HTTPS tunnel for live integration testing, or use the permanent public CDN flow below. Do not disable browser security as a workaround.
+
+## Build and publish assets
+
+ACUL assets must be served from a public HTTPS origin. Publish these build outputs to the same public path:
+
+```text
+dist/assets/rcyc-login.js
+dist/assets/rcyc-login.css
+```
+
+The CDN must return `200`, preserve the JavaScript/CSS content types, enable CORS for the Auth0 custom domain, and serve immutable versioned content. Do not use `file://`, `localhost`, a VPN-only URL, or a private filesystem path.
+
+After publishing, generate the Local rendering configuration:
+
+```sh
+ACUL_PUBLIC_BASE_URL='https://PUBLIC-CDN.example.com/rcyc-auth0-acul' \
+  npm run build:rendering
+```
+
+The command writes `config/login-rendering.generated.json`, which is ignored because it contains environment-specific asset URLs and generated hashes. Review it before deployment. The Auth0 config uses the exact Local client filter and `use_page_template: false` so this ACUL bundle owns the whole page instead of being wrapped by the Standard template.
+
+The generated JavaScript entry is `dist/assets/main.<hash>.js` and the generated stylesheet is `dist/assets/shared/style.<hash>.css`. Upload every file under `dist/assets`, including the shared chunks and `login/index.<hash>.js`, preserving the directory structure. The checked-in `config/login-rendering.json` is only a placeholder template; never apply it before replacing the CDN URL, filename hashes, and SRI values.
+
+## Deploy to the Local tenant
+
+Only use connected mode on the Local/development tenant. It changes live Auth0 rendering settings.
+
+```sh
+auth0 acul config set login \
+  --tenant dev-t63fs8uohee0yl4k.us.auth0.com \
+  --file config/login-rendering.generated.json
+```
+
+For temporary live integration testing against the development tenant, use the project shortcut instead of manually composing the command:
+
+```sh
+cd /home/laureano/Code/Rcyc/auth0-acul
+npm run dev:connected
+```
+
+Direct connected mode is useful for checking that the CLI can patch the tenant, but its `http://localhost` asset URLs are blocked by normal browsers on the HTTPS Auth0 page. For browser testing, serve `dist` with CORS and expose that server through an HTTPS tunnel:
+
+```sh
+cd /home/laureano/Code/Rcyc/auth0-acul
+npx serve dist -p 55444 --cors
+```
+
+In another terminal, start an HTTPS tunnel to port `55444`, for example with Cloudflare Tunnel:
+
+```sh
+cloudflared tunnel --url http://localhost:55444
+```
+
+Copy the generated `https://...trycloudflare.com` URL and generate a rendering config from it:
+
+```sh
+cd /home/laureano/Code/Rcyc/auth0-acul
+ACUL_PUBLIC_BASE_URL='https://YOUR-TUNNEL.trycloudflare.com' npm run build:rendering
+auth0 acul config set login \
+  --tenant dev-t63fs8uohee0yl4k.us.auth0.com \
+  --file config/login-rendering.generated.json
+```
+
+The generated configuration keeps the Local client filter and includes SRI hashes. Keep both the asset server and HTTPS tunnel running while testing. When either process stops, immediately restore Standard rendering so Auth0 does not point to a dead development URL:
+
+```sh
+auth0 acul config set login \
+  --tenant dev-t63fs8uohee0yl4k.us.auth0.com \
+  --file config/login-rendering.standard.json
+```
+
+The Management API equivalent is `PATCH /api/v2/prompts/login/screen/login/rendering`. The Management API token must have `read:prompts` and `update:prompts`. The Auth0 CLI session or token must target the exact tenant domain shown above.
+
+Publish the Custom Text payload separately through the Auth0 Dashboard or Management API for the `login` prompt in English. The payload is in `config/custom-text-login-en.json`; it does not contain secrets.
+
+## Auth0 settings required for the Local app
+
+In **Applications > Applications > RCYC Web Guest Login - Local > Connections**:
+
+- Enable `rcyc-reservation-staging`.
+- Disable `rcyc-reservation-production`.
+- Disable `Username-Password-Authentication`.
+- Disable `google-oauth2`.
+
+In **Branding > Universal Login > Customize authentication screens**:
+
+- Select the `login` screen.
+- Select **Advanced mode**.
+- Add the generated JavaScript and stylesheet head tags, including their SRI hashes.
+- Select the additional context values listed in `config/login-rendering.generated.json`.
+- Do not enable **Use custom page template** for this ACUL screen.
+- Save and publish.
+
+The existing Standard page template remains available as a fallback for screens not filtered to the Local client. It is not part of the ACUL rendering path.
+
+## Verification
+
+1. Start a fresh authorization request from the Local Web application, not the old Seaware POC client.
+2. Confirm the Auth0 context identifies client `8wxI3w8yllBrMuv2OQbCuraVJI6gyf4g`.
+3. Confirm the page uses `auth-local.ritzcarltonyachtcollection.com`.
+4. Compare desktop and mobile screenshots against the Figma reference.
+5. Verify empty email, invalid email, empty password, invalid credentials, loading, reset-password, and signup states.
+6. Confirm the sign-in button calls the ACUL SDK and does not post credentials to a Web endpoint.
+7. Confirm the browser does not show Google or another alternate connection.
+8. Confirm no horizontal overflow, visible keyboard focus, readable error text, and reduced-motion behavior.
+
+Keep the previous rendering configuration and asset version before each deployment. Roll back by restoring the previous rendering JSON and public asset URLs. Do not switch the Local tenant to a tenant-wide advanced configuration without a backup and review.
+
+To immediately restore the login screen after a stopped connected-mode session, apply `config/login-rendering.standard.json`:
+
+```sh
+auth0 acul config set login \
+  --tenant dev-t63fs8uohee0yl4k.us.auth0.com \
+  --file config/login-rendering.standard.json
+```

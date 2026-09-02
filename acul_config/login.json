@@ -1,0 +1,42 @@
+{
+  "tenant": "dev-t63fs8uohee0yl4k",
+  "prompt": "login",
+  "screen": "login",
+  "rendering_mode": "standard",
+  "context_configuration": [],
+  "default_head_tags_disabled": false,
+  "head_tags": [
+    {
+      "attributes": {
+        "crossorigin": "anonymous",
+        "defer": true,
+        "integrity": [
+          "sha256-kESdKhFAoJ6eFh/tpGzKaeS70ZGYpzeMybvU7OWNW5w="
+        ],
+        "src": "https://slimy-islands-warn.loca.lt/assets/main.Djj3Jq_m.js",
+        "type": "module"
+      },
+      "tag": "script"
+    },
+    {
+      "attributes": {
+        "crossorigin": "anonymous",
+        "href": "https://slimy-islands-warn.loca.lt/assets/shared/style.JgTHy9b_.css",
+        "integrity": [
+          "sha256-pyPtI5tOFkRjhENHA0q3qikIpHlT/IYDl3urHl1JaLc="
+        ],
+        "rel": "stylesheet"
+      },
+      "tag": "link"
+    }
+  ],
+  "filters": {
+    "match_type": "includes_any",
+    "clients": [
+      {
+        "id": "8wxI3w8yllBrMuv2OQbCuraVJI6gyf4g"
+      }
+    ]
+  },
+  "use_page_template": false
+}

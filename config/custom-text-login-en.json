@@ -1,0 +1,17 @@
+{
+  "login": {
+    "pageTitle": "Sign in | ${clientName}",
+    "title": "SIGN IN TO YOUR ACCOUNT",
+    "description": "",
+    "buttonText": "SIGN IN",
+    "emailPlaceholder": "Login email",
+    "usernamePlaceholder": "Login email",
+    "passwordPlaceholder": "Password",
+    "forgotPasswordText": "FORGOT PASSWORD?",
+    "signupActionLinkText": "CREATE AN ACCOUNT",
+    "logoAltText": "The Ritz-Carlton Yacht Collection",
+    "wrong-email-credentials": "Login Failed. Please check username/password or create an account.",
+    "authentication-failure": "Login Failed. Please check username/password or create an account.",
+    "custom-script-error-code": "Something went wrong, please try again later."
+  }
+}

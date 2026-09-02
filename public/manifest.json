@@ -1,0 +1,12 @@
+{
+  "screens": [
+    {
+      "login": {
+        "login": {
+          "path": "/screens/login/login",
+          "variants": ["default"]
+        }
+      }
+    }
+  ]
+}
