@@ -1,0 +1,61 @@
+{
+  "client": {
+    "id": "8wxI3w8yllBrMuv2OQbCuraVJI6gyf4g",
+    "name": "RCYC Web Guest Login - Local",
+    "logo_uri": "https://www.ritzcarltonyachtcollection.com/assets/components/images/logo.svg"
+  },
+  "prompt": {
+    "name": "login"
+  },
+  "screen": {
+    "name": "login",
+    "links": {
+      "reset_password": "/u/login/password-reset-start/rcyc-reservation-staging?state=LOCAL_PREVIEW_STATE",
+      "signup": "/u/signup?state=LOCAL_PREVIEW_STATE"
+    },
+    "texts": {
+      "pageTitle": "Sign in | ${clientName}",
+      "title": "SIGN IN TO YOUR ACCOUNT",
+      "description": "",
+      "buttonText": "SIGN IN",
+      "emailPlaceholder": "Login email",
+      "usernamePlaceholder": "Login email",
+      "passwordPlaceholder": "Password",
+      "forgotPasswordText": "FORGOT PASSWORD?",
+      "signupActionLinkText": "CREATE AN ACCOUNT",
+      "logoAltText": "The Ritz-Carlton Yacht Collection",
+      "wrong-email-credentials": "Login Failed. Please check username/password or create an account."
+    },
+    "resetPasswordLink": "/u/login/password-reset-start/rcyc-reservation-staging?state=LOCAL_PREVIEW_STATE",
+    "signupLink": "/u/signup?state=LOCAL_PREVIEW_STATE"
+  },
+  "tenant": {
+    "name": "dev-t63fs8uohee0yl4k",
+    "friendly_name": "The Ritz-Carlton Yacht Collection"
+  },
+  "transaction": {
+    "state": "LOCAL_PREVIEW_STATE",
+    "locale": "en",
+    "connectionStrategy": "auth0",
+    "isSignupEnabled": true,
+    "isForgotPasswordEnabled": true,
+    "isPasskeyEnabled": false,
+    "alternateConnections": [],
+    "currentConnection": {
+      "name": "rcyc-reservation-staging",
+      "strategy": "auth0"
+    },
+    "allowedIdentifiers": ["email"],
+    "errors": null
+  },
+  "branding": {
+    "settings": {
+      "logo_url": "https://www.ritzcarltonyachtcollection.com/assets/components/images/logo.svg"
+    }
+  },
+  "untrusted_data": {
+    "authorization_params": {
+      "login_hint": ""
+    }
+  }
+}
