@@ -93,10 +93,12 @@ The command writes `config/login-rendering.generated.json`, which is ignored bec
 
 ### Automatic GitHub Actions update
 
-`.github/workflows/deploy-pages.yml` can update the development tenant automatically after a successful GitHub Pages deployment. Create an Auth0 machine-to-machine application, authorize it for the tenant's Auth0 Management API with `read:prompts` and `update:prompts`, then add these repository secrets under **Settings > Secrets and variables > Actions**:
+`.github/workflows/deploy-pages.yml` can update the development tenant automatically after a successful GitHub Pages deployment. Create an Auth0 machine-to-machine application, authorize it for the tenant's Auth0 Management API with `read:prompts` and `update:prompts`, then add these as **environment secrets** under **Settings > Environments > github-pages > Environment secrets**:
 
 - `AUTH0_MGMT_CLIENT_ID`
 - `AUTH0_MGMT_CLIENT_SECRET`
+
+The environment name is case-sensitive and must be exactly `github-pages`, matching the deployment job. Repository-level Actions secrets with the same names also work when permitted by the repository policy, but the environment secrets are the least ambiguous configuration for this workflow.
 
 The workflow is restricted to the `master` branch and targets only `dev-t63fs8uohee0yl4k.us.auth0.com`. It generates the config from the exact build output, deploys Pages first, and only then patches the `login/login` rendering configuration. A missing or invalid secret causes the workflow to fail after the Pages deployment; it does not silently update Auth0 with stale asset hashes.
 
