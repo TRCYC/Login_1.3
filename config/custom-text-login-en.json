@@ -7,13 +7,13 @@
     "emailPlaceholder": "Login email",
     "usernamePlaceholder": "Login email",
     "passwordPlaceholder": "Password",
-    "invalid-email-username": "Please enter a valid email address.",
-    "no-password": "Please enter a password.",
+    "invalid-email-username": "Please enter a valid email address",
+    "no-password": "This field is required",
     "forgotPasswordText": "FORGOT PASSWORD?",
     "signupActionLinkText": "CREATE AN ACCOUNT",
     "logoAltText": "The Ritz-Carlton Yacht Collection",
-    "wrong-email-credentials": "Login Failed. Please check username/password or create an account.",
-    "authentication-failure": "Login Failed. Please check username/password or create an account.",
+    "wrong-email-credentials": "Login Failed. Please check username/password or create an account. This login does not accept Marriott Bonvoy credentials; it is unique to The Ritz-Carlton Yacht Collection. Forgot password?",
+    "authentication-failure": "Login Failed. Please check username/password or create an account. This login does not accept Marriott Bonvoy credentials; it is unique to The Ritz-Carlton Yacht Collection. Forgot password?",
     "custom-script-error-code": "Something went wrong, please try again later."
   }
 }

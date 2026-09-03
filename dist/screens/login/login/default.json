@@ -24,7 +24,8 @@
       "forgotPasswordText": "FORGOT PASSWORD?",
       "signupActionLinkText": "CREATE AN ACCOUNT",
       "logoAltText": "The Ritz-Carlton Yacht Collection",
-      "wrong-email-credentials": "Login Failed. Please check username/password or create an account."
+      "wrong-email-credentials": "Login Failed. Please check username/password or create an account. This login does not accept Marriott Bonvoy credentials; it is unique to The Ritz-Carlton Yacht Collection. Forgot password?",
+      "authentication-failure": "Login Failed. Please check username/password or create an account. This login does not accept Marriott Bonvoy credentials; it is unique to The Ritz-Carlton Yacht Collection. Forgot password?"
     },
     "resetPasswordLink": "/u/login/password-reset-start/rcyc-reservation-staging?state=LOCAL_PREVIEW_STATE",
     "signupLink": "/u/signup?state=LOCAL_PREVIEW_STATE"

@@ -25,9 +25,9 @@ const copy = {
   forgotPassword: 'FORGOT PASSWORD?',
   signIn: 'SIGN IN',
   createAccount: 'CREATE AN ACCOUNT',
-  emailRequired: 'Please enter a valid email address.',
-  passwordRequired: 'Please enter a password.',
-  loginFailed: 'Login Failed. Please check username/password or create an account.',
+  emailRequired: 'Please enter a valid email address',
+  passwordRequired: 'This field is required',
+  loginFailed: 'Login Failed. Please check username/password or create an account. This login does not accept Marriott Bonvoy credentials; it is unique to The Ritz-Carlton Yacht Collection. Forgot password?',
   genericError: 'Something went wrong, please try again later.',
 };
 
@@ -35,17 +35,17 @@ function getText(texts, key, fallback) {
   return texts?.[key] || fallback;
 }
 
-function getErrorMessage(error, texts, fallback = '') {
-  if (!error) {
-    return fallback;
-  }
-
-  const code = typeof error === 'string'
+function getErrorCode(error) {
+  return typeof error === 'string'
     ? ''
-    : String(error.code || error.error || '').toLowerCase();
+    : String(error?.code || error?.error || '').toLowerCase();
+}
+
+function isAuthenticationFailureError(error) {
+  const code = getErrorCode(error);
   const message = typeof error === 'string'
-    ? error
-    : String(error.message || error.description || '');
+    ? error.toLowerCase()
+    : String(error?.message || error?.description || '').toLowerCase();
   const authenticationFailureCodes = [
     'invalid_credentials',
     'invalid_grant',
@@ -58,12 +58,28 @@ function getErrorMessage(error, texts, fallback = '') {
     'user-not-found',
     'user_not_found',
   ];
-  const isAuthenticationFailure = authenticationFailureCodes.includes(code)
-    || /(?:invalid|wrong|incorrect).*(?:credential|password)|(?:credential|password).*(?:invalid|wrong|incorrect)/.test(code);
+
+  return authenticationFailureCodes.includes(code)
+    || /(?:invalid|wrong|incorrect).*(?:credential|password)|(?:credential|password).*(?:invalid|wrong|incorrect)/.test(code)
+    || /login failed|username\/password|invalid credentials/.test(message);
+}
+
+function getErrorMessage(error, texts, fallback = '') {
+  if (!error) {
+    return fallback;
+  }
+
+  const code = getErrorCode(error);
+  const message = typeof error === 'string'
+    ? error
+    : String(error?.message || error?.description || '');
   const isInternalError = /can't access property|cannot read propert(?:y|ies)|is undefined|is not defined/i.test(message);
 
-  if (isAuthenticationFailure) {
-    return getText(texts, 'authentication-failure', fallback);
+  if (isAuthenticationFailureError(error)) {
+    // Keep this copy stable even when the Auth0 tenant still has an older
+    // custom-text value. The Figma/Jira error state requires the full RCYC
+    // guidance, and the JSON payload is maintained separately for Auth0.
+    return copy.loginFailed;
   }
 
   if (code.startsWith('custom_script') || isInternalError) {
@@ -108,8 +124,6 @@ function LoginScreen() {
   const isSignupEnabled = Boolean(signupLink && transaction?.isSignupEnabled !== false);
   const emailIsValid = email.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const passwordIsValid = password.length > 0;
-  const emailError = touched.email && !emailIsValid ? getText(texts, 'invalid-email-username', copy.emailRequired) : '';
-  const passwordError = touched.password && !passwordIsValid ? getText(texts, 'no-password', copy.passwordRequired) : '';
   const sdkErrors = errorState?.errors;
   const usernameSdkError = sdkErrors?.byField?.('username')?.[0];
   const passwordSdkError = sdkErrors?.byField?.('password')?.[0];
@@ -125,6 +139,24 @@ function LoginScreen() {
     .map((error) => getErrorMessage(error, texts))
     .filter(Boolean)
     .filter((message, index, messages) => messages.indexOf(message) === index);
+  const hasAuthenticationFailure = allErrors.some(isAuthenticationFailureError)
+    || (submitError && isAuthenticationFailureError(submitError));
+  // An authentication failure is a form-level error. Do not combine it with
+  // client-side field validation after Auth0 re-renders the screen with empty
+  // field values. Keep client-side validation active for blank or malformed
+  // input submissions so those messages remain under the relevant fields.
+  const emailError = !hasAuthenticationFailure && touched.email && !emailIsValid
+    ? getText(texts, 'invalid-email-username', copy.emailRequired)
+    : '';
+  const passwordError = !hasAuthenticationFailure && touched.password && !passwordIsValid
+    ? getText(texts, 'no-password', copy.passwordRequired)
+    : '';
+  const usernameFieldError = usernameError && !isAuthenticationFailureError(usernameError)
+    ? getErrorMessage(usernameError, texts)
+    : '';
+  const passwordFieldError = passwordErrorFromAuth0 && !isAuthenticationFailureError(passwordErrorFromAuth0)
+    ? getErrorMessage(passwordErrorFromAuth0, texts)
+    : '';
   // Auth0 may return invalid credentials as a field-level transaction error.
   // Keep that error under the field, but also surface it at the top so a failed
   // server round-trip never looks like a silent page reload.
@@ -219,7 +251,7 @@ function LoginScreen() {
             <RcycField
               id="rcyc-login-email"
               label={getText(texts, 'emailPlaceholder', copy.emailLabel)}
-              error={emailError || getErrorMessage(usernameError, texts)}
+              error={emailError || usernameFieldError}
             >
               <input
                 ref={emailInputRef}
@@ -234,8 +266,8 @@ function LoginScreen() {
                   clearFormErrors();
                 }}
                 onBlur={() => handleBlur('email')}
-                aria-invalid={Boolean(emailError || usernameError)}
-                aria-describedby={emailError || usernameError ? 'rcyc-login-email-error' : undefined}
+                aria-invalid={Boolean(emailError || usernameFieldError)}
+                aria-describedby={emailError || usernameFieldError ? 'rcyc-login-email-error' : undefined}
                 autoFocus
               />
             </RcycField>
@@ -243,7 +275,7 @@ function LoginScreen() {
             <RcycField
               id="rcyc-login-password"
               label={getText(texts, 'passwordPlaceholder', copy.passwordLabel)}
-              error={passwordError || getErrorMessage(passwordErrorFromAuth0, texts)}
+              error={passwordError || passwordFieldError}
             >
               <input
                 ref={passwordInputRef}
@@ -258,8 +290,8 @@ function LoginScreen() {
                   clearFormErrors();
                 }}
                 onBlur={() => handleBlur('password')}
-                aria-invalid={Boolean(passwordError || passwordErrorFromAuth0)}
-                aria-describedby={passwordError || passwordErrorFromAuth0 ? 'rcyc-login-password-error' : undefined}
+                aria-invalid={Boolean(passwordError || passwordFieldError)}
+                aria-describedby={passwordError || passwordFieldError ? 'rcyc-login-password-error' : undefined}
               />
             </RcycField>
 
