@@ -91,6 +91,15 @@ ACUL_PUBLIC_BASE_URL='https://PUBLIC-CDN.example.com/rcyc-auth0-acul' \
 
 The command writes `config/login-rendering.generated.json`, which is ignored because it contains environment-specific asset URLs and generated hashes. Review it before deployment. The Auth0 config uses the exact Local client filter and `use_page_template: false` so this ACUL bundle owns the whole page instead of being wrapped by the Standard template.
 
+### Automatic GitHub Actions update
+
+`.github/workflows/deploy-pages.yml` can update the development tenant automatically after a successful GitHub Pages deployment. Create an Auth0 machine-to-machine application, authorize it for the tenant's Auth0 Management API with `read:prompts` and `update:prompts`, then add these repository secrets under **Settings > Secrets and variables > Actions**:
+
+- `AUTH0_MGMT_CLIENT_ID`
+- `AUTH0_MGMT_CLIENT_SECRET`
+
+The workflow is restricted to the `master` branch and targets only `dev-t63fs8uohee0yl4k.us.auth0.com`. It generates the config from the exact build output, deploys Pages first, and only then patches the `login/login` rendering configuration. A missing or invalid secret causes the workflow to fail after the Pages deployment; it does not silently update Auth0 with stale asset hashes.
+
 The generated JavaScript entry is `dist/assets/main.<hash>.js` and the generated stylesheet is `dist/assets/shared/style.<hash>.css`. Upload every file under `dist/assets`, including the shared chunks and `login/index.<hash>.js`, preserving the directory structure. The checked-in `config/login-rendering.json` is only a placeholder template; never apply it before replacing the CDN URL, filename hashes, and SRI values.
 
 ### GitHub Pages
@@ -108,7 +117,7 @@ ACUL_PUBLIC_BASE_URL='https://TRCYC.github.io/Login_1.3' \
   npm run build:rendering
 ```
 
-The GitHub Pages site is public HTTPS hosting for the ACUL assets; it does not itself configure Auth0. After the site is live, apply `config/login-rendering.generated.json` with `auth0 acul config set login` as described below.
+The GitHub Pages site is public HTTPS hosting for the ACUL assets. The GitHub Actions workflow can update Auth0 automatically after the Pages deployment; for a manual deployment, apply `config/login-rendering.generated.json` with `auth0 acul config set login` as described below.
 
 ## Deploy to the Local tenant
 

@@ -38,6 +38,18 @@ jobs:
       - name: Build ACUL assets
         run: npm run build
 
+      - name: Generate Auth0 rendering configuration
+        env:
+          ACUL_PUBLIC_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: node scripts/generate-rendering-config.mjs
+
+      - name: Upload Auth0 rendering configuration
+        uses: actions/upload-artifact@v4
+        with:
+          name: acul-rendering-config
+          path: config/login-rendering.generated.json
+          retention-days: 7
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
@@ -57,3 +69,43 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Download Auth0 rendering configuration
+        uses: actions/download-artifact@v4
+        with:
+          name: acul-rendering-config
+          path: config
+
+      - name: Update Auth0 ACUL rendering configuration
+        env:
+          AUTH0_TENANT_DOMAIN: dev-t63fs8uohee0yl4k.us.auth0.com
+          AUTH0_MGMT_CLIENT_ID: ${{ secrets.AUTH0_MGMT_CLIENT_ID }}
+          AUTH0_MGMT_CLIENT_SECRET: ${{ secrets.AUTH0_MGMT_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+
+          token_response="$(curl --fail --silent --show-error --retry 3 \
+            --request POST "https://${AUTH0_TENANT_DOMAIN}/oauth/token" \
+            --header 'content-type: application/json' \
+            --data "$(jq -n \
+              --arg client_id "$AUTH0_MGMT_CLIENT_ID" \
+              --arg client_secret "$AUTH0_MGMT_CLIENT_SECRET" \
+              --arg audience "https://${AUTH0_TENANT_DOMAIN}/api/v2/" \
+              '{client_id: $client_id, client_secret: $client_secret, audience: $audience, grant_type: "client_credentials"}')")"
+
+          access_token="$(printf '%s' "$token_response" | jq --exit-status --raw-output '.access_token')"
+
+          http_status="$(curl --fail --silent --show-error --retry 3 \
+            --request PATCH "https://${AUTH0_TENANT_DOMAIN}/api/v2/prompts/login/screen/login/rendering" \
+            --header "authorization: Bearer ${access_token}" \
+            --header 'content-type: application/json' \
+            --data-binary @config/login-rendering.generated.json \
+            --output /tmp/auth0-rendering-response.json \
+            --write-out '%{http_code}')"
+
+          if [[ "${http_status}" -lt 200 || "${http_status}" -ge 300 ]]; then
+            echo "Auth0 rendering update failed with HTTP ${http_status}." >&2
+            exit 1
+          fi
+
+          echo "Auth0 login rendering now points to the deployed Pages assets."

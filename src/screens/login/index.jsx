@@ -40,15 +40,26 @@ function getErrorMessage(error, texts, fallback = '') {
     return fallback;
   }
 
-  const code = String(error.code || error.error || '').toLowerCase();
-  const message = error.message || error.description || '';
-  const isAuthenticationFailure = [
+  const code = typeof error === 'string'
+    ? ''
+    : String(error.code || error.error || '').toLowerCase();
+  const message = typeof error === 'string'
+    ? error
+    : String(error.message || error.description || '');
+  const authenticationFailureCodes = [
     'invalid_credentials',
     'invalid_grant',
     'invalid_user_password',
     'authentication-failure',
     'wrong-email-credentials',
-  ].includes(code);
+    'wrong-password',
+    'invalid-password',
+    'invalid-user-password',
+    'user-not-found',
+    'user_not_found',
+  ];
+  const isAuthenticationFailure = authenticationFailureCodes.includes(code)
+    || /(?:invalid|wrong|incorrect).*(?:credential|password)|(?:credential|password).*(?:invalid|wrong|incorrect)/.test(code);
   const isInternalError = /can't access property|cannot read propert(?:y|ies)|is undefined|is not defined/i.test(message);
 
   if (isAuthenticationFailure) {
@@ -102,14 +113,25 @@ function LoginScreen() {
   const sdkErrors = errorState?.errors;
   const usernameSdkError = sdkErrors?.byField?.('username')?.[0];
   const passwordSdkError = sdkErrors?.byField?.('password')?.[0];
-  const generalSdkErrors = sdkErrors?.byType?.('auth0')?.filter((error) => !error.field) || [];
+  const authSdkErrors = sdkErrors?.byType?.('auth0') || [];
   const transactionErrors = Array.isArray(transaction?.errors) ? transaction.errors : [];
-  const allErrors = [...generalSdkErrors, ...transactionErrors];
+  const usernameTransactionError = transactionErrors.find((error) => ['username', 'email', 'identifier'].includes(error?.field));
+  const passwordTransactionError = transactionErrors.find((error) => error?.field === 'password');
+  const usernameError = usernameSdkError || usernameTransactionError;
+  const passwordErrorFromAuth0 = passwordSdkError || passwordTransactionError;
+  const allErrors = [...authSdkErrors, ...transactionErrors];
   const generalErrors = allErrors
+    .filter((error) => !error?.field)
     .map((error) => getErrorMessage(error, texts))
     .filter(Boolean)
     .filter((message, index, messages) => messages.indexOf(message) === index);
-  const visibleGeneralError = submitError || generalErrors[0] || '';
+  // Auth0 may return invalid credentials as a field-level transaction error.
+  // Keep that error under the field, but also surface it at the top so a failed
+  // server round-trip never looks like a silent page reload.
+  const firstAuth0Error = allErrors
+    .map((error) => getErrorMessage(error, texts, getText(texts, 'wrong-email-credentials', copy.loginFailed)))
+    .find(Boolean);
+  const visibleGeneralError = submitError || generalErrors[0] || firstAuth0Error || '';
   const hasExpiredSession = allErrors.some(isExpiredSessionError);
 
   useEffect(() => {
@@ -197,7 +219,7 @@ function LoginScreen() {
             <RcycField
               id="rcyc-login-email"
               label={getText(texts, 'emailPlaceholder', copy.emailLabel)}
-              error={emailError || getErrorMessage(usernameSdkError, texts)}
+              error={emailError || getErrorMessage(usernameError, texts)}
             >
               <input
                 ref={emailInputRef}
@@ -212,8 +234,8 @@ function LoginScreen() {
                   clearFormErrors();
                 }}
                 onBlur={() => handleBlur('email')}
-                aria-invalid={Boolean(emailError || usernameSdkError)}
-                aria-describedby={emailError || usernameSdkError ? 'rcyc-login-email-error' : undefined}
+                aria-invalid={Boolean(emailError || usernameError)}
+                aria-describedby={emailError || usernameError ? 'rcyc-login-email-error' : undefined}
                 autoFocus
               />
             </RcycField>
@@ -221,7 +243,7 @@ function LoginScreen() {
             <RcycField
               id="rcyc-login-password"
               label={getText(texts, 'passwordPlaceholder', copy.passwordLabel)}
-              error={passwordError || getErrorMessage(passwordSdkError, texts)}
+              error={passwordError || getErrorMessage(passwordErrorFromAuth0, texts)}
             >
               <input
                 ref={passwordInputRef}
@@ -236,8 +258,8 @@ function LoginScreen() {
                   clearFormErrors();
                 }}
                 onBlur={() => handleBlur('password')}
-                aria-invalid={Boolean(passwordError || passwordSdkError)}
-                aria-describedby={passwordError || passwordSdkError ? 'rcyc-login-password-error' : undefined}
+                aria-invalid={Boolean(passwordError || passwordErrorFromAuth0)}
+                aria-describedby={passwordError || passwordErrorFromAuth0 ? 'rcyc-login-password-error' : undefined}
               />
             </RcycField>
 
