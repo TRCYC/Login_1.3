@@ -100,6 +100,10 @@ The command writes `config/login-rendering.generated.json`, which is ignored bec
 
 The workflow is restricted to the `master` branch and targets only `dev-t63fs8uohee0yl4k.us.auth0.com`. It generates the config from the exact build output, deploys Pages first, and only then patches the `login/login` rendering configuration. A missing or invalid secret causes the workflow to fail after the Pages deployment; it does not silently update Auth0 with stale asset hashes.
 
+Before publishing, the workflow also carries forward the previous commit's hashed assets. This keeps the currently configured Auth0 bundle available while the Pages deployment and Management API update are completing, and provides a one-version rollback buffer if the Auth0 update fails.
+
+If the Auth0 update step returns `401`, the Pages site has still deployed successfully; only the Management API update was rejected. Check that the `github-pages` environment secrets belong to an Auth0 Machine-to-Machine application authorized for the tenant's Auth0 Management API, that the grant includes `read:prompts` and `update:prompts`, and that the token audience and API request use the same default tenant domain. The workflow uses the documented form-encoded client-credentials request and prints Auth0's sanitized JSON error body on failure.
+
 The generated JavaScript entry is `dist/assets/main.<hash>.js` and the generated stylesheet is `dist/assets/shared/style.<hash>.css`. Upload every file under `dist/assets`, including the shared chunks and `login/index.<hash>.js`, preserving the directory structure. The checked-in `config/login-rendering.json` is only a placeholder template; never apply it before replacing the CDN URL, filename hashes, and SRI values.
 
 ### GitHub Pages
