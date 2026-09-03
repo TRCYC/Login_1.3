@@ -2,8 +2,12 @@
   "tenant": "dev-t63fs8uohee0yl4k",
   "prompt": "login",
   "screen": "login",
-  "rendering_mode": "standard",
-  "context_configuration": [],
+  "rendering_mode": "advanced",
+  "context_configuration": [
+    "branding.settings",
+    "client.logo_uri",
+    "screen.texts"
+  ],
   "default_head_tags_disabled": false,
   "head_tags": [
     {
@@ -13,7 +17,7 @@
         "integrity": [
           "sha256-kESdKhFAoJ6eFh/tpGzKaeS70ZGYpzeMybvU7OWNW5w="
         ],
-        "src": "https://slimy-islands-warn.loca.lt/assets/main.Djj3Jq_m.js",
+        "src": "https://trcyc.github.io/Login_1.3/assets/main.Djj3Jq_m.js",
         "type": "module"
       },
       "tag": "script"
@@ -21,7 +25,7 @@
     {
       "attributes": {
         "crossorigin": "anonymous",
-        "href": "https://slimy-islands-warn.loca.lt/assets/shared/style.JgTHy9b_.css",
+        "href": "https://trcyc.github.io/Login_1.3/assets/shared/style.JgTHy9b_.css",
         "integrity": [
           "sha256-pyPtI5tOFkRjhENHA0q3qikIpHlT/IYDl3urHl1JaLc="
         ],

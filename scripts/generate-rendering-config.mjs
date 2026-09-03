@@ -79,14 +79,8 @@ const renderingConfig = {
   default_head_tags_disabled: false,
   context_configuration: [
     'branding.settings',
-    'branding.themes.default',
     'client.logo_uri',
-    'client.metadata.privacy_url',
     'screen.texts',
-    'tenant.friendly_name',
-    'tenant.name',
-    'transaction.custom_domain.domain',
-    'untrusted_data.authorization_params.login_hint',
   ],
   use_page_template: false,
   filters: {
