@@ -115,6 +115,7 @@ function LoginScreen() {
   const [touched, setTouched] = useState({ email: false, password: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [lastSubmissionHadValidFields, setLastSubmissionHadValidFields] = useState(false);
 
   const texts = screen?.texts || {};
   const logoUrl = client?.logoUrl || client?.logo_uri || branding?.settings?.logoUrl || branding?.settings?.logo_url || FALLBACK_LOGO;
@@ -139,8 +140,10 @@ function LoginScreen() {
     .map((error) => getErrorMessage(error, texts))
     .filter(Boolean)
     .filter((message, index, messages) => messages.indexOf(message) === index);
-  const hasAuthenticationFailure = allErrors.some(isAuthenticationFailureError)
-    || (submitError && isAuthenticationFailureError(submitError));
+  const hasAuthenticationFailure = lastSubmissionHadValidFields && (
+    allErrors.some(isAuthenticationFailureError)
+    || (submitError && isAuthenticationFailureError(submitError))
+  );
   // An authentication failure is a form-level error. Do not combine it with
   // client-side field validation after Auth0 re-renders the screen with empty
   // field values. Keep client-side validation active for blank or malformed
@@ -175,6 +178,7 @@ function LoginScreen() {
 
   const clearFormErrors = () => {
     setSubmitError('');
+    setLastSubmissionHadValidFields(false);
     if (errorState?.hasError) {
       errorState.dismissAll();
     }
@@ -183,7 +187,7 @@ function LoginScreen() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setTouched({ email: true, password: true });
-    setSubmitError('');
+    clearFormErrors();
 
     if (!emailIsValid || !passwordIsValid) {
       if (!emailIsValid) {
@@ -194,6 +198,7 @@ function LoginScreen() {
       return;
     }
 
+    setLastSubmissionHadValidFields(true);
     setIsSubmitting(true);
 
     try {
