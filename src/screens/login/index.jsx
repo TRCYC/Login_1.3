@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   useBranding,
   useClient,
@@ -7,9 +7,14 @@ import {
   useScreen,
   useTransaction,
 } from '@auth0/auth0-acul-react/login';
-
-const FALLBACK_LOGO = 'https://www.ritzcarltonyachtcollection.com/assets/components/images/logo.svg';
-const FALLBACK_PRIVACY_URL = 'https://www.ritzcarltonyachtcollection.com/legal/privacy-policy';
+import {
+  RcycAlert,
+  RcycAuthHeader,
+  RcycField,
+  RcycPageShell,
+  FALLBACK_LOGO,
+  FALLBACK_PRIVACY_URL,
+} from '../../components/RcycPageShell.jsx';
 
 const copy = {
   title: 'SIGN IN TO YOUR ACCOUNT',
@@ -23,31 +28,62 @@ const copy = {
   emailRequired: 'Please enter a valid email address.',
   passwordRequired: 'Please enter a password.',
   loginFailed: 'Login Failed. Please check username/password or create an account.',
-  legalIntro: "Yacht OpCo Limited d/b/a The Ritz-Carlton Yacht Collection uses The Ritz-Carlton marks under license from The Ritz-Carlton Hotel Company, L.L.C. and is not an affiliate of The Ritz-Carlton Hotel Company, L.L.C. or Marriott International, Inc. Renderings are artistic concepts. Any specifications in this depiction may change at The Ritz-Carlton Yacht Collection's sole discretion without notice. The features, plans, itineraries, offerings and specifications described above are proposed only, and The Ritz-Carlton Yacht Collection reserves the right to modify, revise or withdraw any or all of the same in its sole discretion and without prior notice. Guest's and related travel will be governed by the terms and conditions of the Ticket Contract in effect at the time of booking. The terms of the Ticket Contract will supersede any other representations or statements whether oral or written. The Ritz-Carlton Yacht Collection recognizes the importance of ensuring that our website is accessible to those with disabilities. This website is currently in development. This website endeavors to achieve &ldquo;Level AA&rdquo; WCAG 2.0 compliance. A passport is required to board the Vessel, regardless of itinerary. Yacht's registry: Malta",
+  genericError: 'Something went wrong, please try again later.',
 };
 
 function getText(texts, key, fallback) {
   return texts?.[key] || fallback;
 }
 
-function getErrorMessage(error) {
+function getErrorMessage(error, texts, fallback = '') {
   if (!error) {
-    return '';
+    return fallback;
   }
 
-  return error.message || error.description || '';
+  const code = String(error.code || error.error || '').toLowerCase();
+  const message = error.message || error.description || '';
+  const isAuthenticationFailure = [
+    'invalid_credentials',
+    'invalid_grant',
+    'invalid_user_password',
+    'authentication-failure',
+    'wrong-email-credentials',
+  ].includes(code);
+  const isInternalError = /can't access property|cannot read propert(?:y|ies)|is undefined|is not defined/i.test(message);
+
+  if (isAuthenticationFailure) {
+    return getText(texts, 'authentication-failure', fallback);
+  }
+
+  if (code.startsWith('custom_script') || isInternalError) {
+    return getText(texts, 'custom-script-error-code', copy.genericError);
+  }
+
+  return message || fallback;
+}
+
+function isExpiredSessionError(error) {
+  const code = String(error?.code || error?.error || '').toLowerCase();
+  const message = String(error?.message || error?.description || '').toLowerCase();
+
+  return /expired|session.*timeout|timeout.*session|transaction.*expired/.test(`${code} ${message}`);
 }
 
 function LoginScreen() {
-  const { login } = useLogin();
+  // useLogin returns the manager instance. Keep the method call on that instance
+  // because the ACUL SDK login method reads this.transaction internally.
+  const loginManager = useLogin();
   const screen = useScreen();
   const transaction = useTransaction();
   const client = useClient();
   const branding = useBranding();
   const errorState = useErrors();
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
   const [email, setEmail] = useState(screen?.data?.username || '');
   const [password, setPassword] = useState('');
   const [captcha, setCaptcha] = useState('');
+  // Layout-only until Auth0 exposes a supported login-level Remember Me option.
   const [rememberMe, setRememberMe] = useState(false);
   const [touched, setTouched] = useState({ email: false, password: false });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,11 +104,27 @@ function LoginScreen() {
   const passwordSdkError = sdkErrors?.byField?.('password')?.[0];
   const generalSdkErrors = sdkErrors?.byType?.('auth0')?.filter((error) => !error.field) || [];
   const transactionErrors = Array.isArray(transaction?.errors) ? transaction.errors : [];
-  const generalErrors = [...generalSdkErrors, ...transactionErrors]
-    .map(getErrorMessage)
+  const allErrors = [...generalSdkErrors, ...transactionErrors];
+  const generalErrors = allErrors
+    .map((error) => getErrorMessage(error, texts))
     .filter(Boolean)
     .filter((message, index, messages) => messages.indexOf(message) === index);
   const visibleGeneralError = submitError || generalErrors[0] || '';
+  const hasExpiredSession = allErrors.some(isExpiredSessionError);
+
+  useEffect(() => {
+    const pageTitle = getText(texts, 'pageTitle', '');
+    if (pageTitle) {
+      document.title = pageTitle.replace('${clientName}', client?.name || '');
+    }
+  }, [client?.name, texts]);
+
+  const clearFormErrors = () => {
+    setSubmitError('');
+    if (errorState?.hasError) {
+      errorState.dismissAll();
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -80,19 +132,28 @@ function LoginScreen() {
     setSubmitError('');
 
     if (!emailIsValid || !passwordIsValid) {
+      if (!emailIsValid) {
+        emailInputRef.current?.focus();
+      } else {
+        passwordInputRef.current?.focus();
+      }
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      await login({
+      await loginManager.login({
         username: email.trim(),
         password,
         ...(screen?.isCaptchaAvailable ? { captcha } : {}),
       });
     } catch (error) {
-      setSubmitError(getErrorMessage(error) || getText(texts, 'wrong-email-credentials', copy.loginFailed));
+      setSubmitError(getErrorMessage(
+        error,
+        texts,
+        getText(texts, 'wrong-email-credentials', copy.loginFailed),
+      ));
       setIsSubmitting(false);
     }
   };
@@ -102,63 +163,83 @@ function LoginScreen() {
   };
 
   return (
-    <div className="rcyc-page-shell">
-      <main className="rcyc-login-stage" aria-labelledby="rcyc-login-title">
-        <section className="rcyc-login-column">
-          <header className="rcyc-header">
-            <img className="rcyc-logo" src={logoUrl} alt={getText(texts, 'logoAltText', 'The Ritz-Carlton Yacht Collection')} />
-            <h1 id="rcyc-login-title">{getText(texts, 'title', copy.title)}</h1>
-          </header>
+    <RcycPageShell
+      labelledBy="rcyc-login-title"
+      privacyUrl={privacyUrl || FALLBACK_PRIVACY_URL}
+    >
+      <section className="rcyc-auth-stage">
+        <div className="rcyc-form-column">
+          <RcycAuthHeader
+            logoUrl={logoUrl || FALLBACK_LOGO}
+            logoAlt={getText(texts, 'logoAltText', 'The Ritz-Carlton Yacht Collection')}
+            title={getText(texts, 'title', copy.title)}
+            titleId="rcyc-login-title"
+          />
 
           {visibleGeneralError && (
-            <div className="rcyc-alert" role="alert" aria-live="assertive">
+            <RcycAlert
+              id="rcyc-login-error"
+              action={hasExpiredSession ? (
+                <button
+                  className="rcyc-alert-refresh"
+                  type="button"
+                  onClick={() => window.location.reload()}
+                >
+                  REFRESH
+                </button>
+              ) : null}
+            >
               {visibleGeneralError}
-            </div>
+            </RcycAlert>
           )}
 
-          <form className="rcyc-login-form" onSubmit={handleSubmit} noValidate>
-            <div className={`rcyc-field ${emailError || usernameSdkError ? 'has-error' : ''}`}>
-              <label htmlFor="rcyc-login-email">{getText(texts, 'emailPlaceholder', copy.emailLabel)}</label>
+          <form className="rcyc-form" onSubmit={handleSubmit} noValidate>
+            <RcycField
+              id="rcyc-login-email"
+              label={getText(texts, 'emailPlaceholder', copy.emailLabel)}
+              error={emailError || getErrorMessage(usernameSdkError, texts)}
+            >
               <input
+                ref={emailInputRef}
                 id="rcyc-login-email"
                 name="username"
                 type="email"
                 autoComplete="username"
                 placeholder={getText(texts, 'emailPlaceholder', copy.emailPlaceholder)}
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  clearFormErrors();
+                }}
                 onBlur={() => handleBlur('email')}
                 aria-invalid={Boolean(emailError || usernameSdkError)}
-                aria-describedby={emailError || usernameSdkError ? 'rcyc-email-error' : undefined}
+                aria-describedby={emailError || usernameSdkError ? 'rcyc-login-email-error' : undefined}
                 autoFocus
               />
-              {(emailError || usernameSdkError) && (
-                <span id="rcyc-email-error" className="rcyc-field-error" role="alert">
-                  {emailError || getErrorMessage(usernameSdkError)}
-                </span>
-              )}
-            </div>
+            </RcycField>
 
-            <div className={`rcyc-field ${passwordError || passwordSdkError ? 'has-error' : ''}`}>
-              <label htmlFor="rcyc-login-password">{getText(texts, 'passwordPlaceholder', copy.passwordLabel)}</label>
+            <RcycField
+              id="rcyc-login-password"
+              label={getText(texts, 'passwordPlaceholder', copy.passwordLabel)}
+              error={passwordError || getErrorMessage(passwordSdkError, texts)}
+            >
               <input
+                ref={passwordInputRef}
                 id="rcyc-login-password"
                 name="password"
                 type="password"
                 autoComplete="current-password"
                 placeholder={getText(texts, 'passwordPlaceholder', copy.passwordPlaceholder)}
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  clearFormErrors();
+                }}
                 onBlur={() => handleBlur('password')}
                 aria-invalid={Boolean(passwordError || passwordSdkError)}
-                aria-describedby={passwordError || passwordSdkError ? 'rcyc-password-error' : undefined}
+                aria-describedby={passwordError || passwordSdkError ? 'rcyc-login-password-error' : undefined}
               />
-              {(passwordError || passwordSdkError) && (
-                <span id="rcyc-password-error" className="rcyc-field-error" role="alert">
-                  {passwordError || getErrorMessage(passwordSdkError)}
-                </span>
-              )}
-            </div>
+            </RcycField>
 
             {screen?.isCaptchaAvailable && (
               <div className="rcyc-captcha-field">
@@ -175,16 +256,20 @@ function LoginScreen() {
               </div>
             )}
 
-            <div className="rcyc-login-meta">
+            <div className="rcyc-form-meta">
               <label className="rcyc-remember-me" htmlFor="rcyc-remember-me">
                 <input
                   id="rcyc-remember-me"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(event) => setRememberMe(event.target.checked)}
+                  aria-describedby="rcyc-remember-me-help"
                 />
                 <span>Remember Me</span>
               </label>
+              <span id="rcyc-remember-me-help" className="rcyc-visually-hidden">
+                Auth0 controls session duration. This option never stores your password in this browser.
+              </span>
               {resetPasswordLink && (
                 <a className="rcyc-forgot-password" href={resetPasswordLink}>
                   {getText(texts, 'forgotPasswordText', copy.forgotPassword)}
@@ -192,8 +277,13 @@ function LoginScreen() {
               )}
             </div>
 
-            <div className="rcyc-actions">
-              <button className="rcyc-button rcyc-button-primary" type="submit" disabled={isSubmitting}>
+            <div className="rcyc-form-actions">
+              <button
+                className="rcyc-button rcyc-button-primary"
+                type="submit"
+                disabled={isSubmitting}
+                aria-busy={isSubmitting}
+              >
                 {isSubmitting ? <span className="rcyc-spinner" aria-label="Signing in" /> : getText(texts, 'buttonText', copy.signIn)}
               </button>
               {isSignupEnabled && (
@@ -203,17 +293,9 @@ function LoginScreen() {
               )}
             </div>
           </form>
-        </section>
-      </main>
-
-      <footer className="rcyc-footer">
-        <div className="rcyc-footer-topline">
-          <p>&copy; 2026 The Ritz-Carlton Yacht Collection. All Rights Reserved.</p>
-          <a href={privacyUrl}>Your privacy rights</a>
         </div>
-        <p>{copy.legalIntro}</p>
-      </footer>
-    </div>
+      </section>
+    </RcycPageShell>
   );
 }
 

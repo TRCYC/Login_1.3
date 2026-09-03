@@ -15,9 +15,9 @@
         "crossorigin": "anonymous",
         "defer": true,
         "integrity": [
-          "sha256-kESdKhFAoJ6eFh/tpGzKaeS70ZGYpzeMybvU7OWNW5w="
+          "sha256-U3IROZywaH6CRy6y/Z4iHJGWYDPeTClrgcc6M9ICT6Q="
         ],
-        "src": "https://trcyc.github.io/Login_1.3/assets/main.Djj3Jq_m.js",
+        "src": "https://trcyc.github.io/Login_1.3/assets/main.BH7kzhsN.js",
         "type": "module"
       },
       "tag": "script"
@@ -25,9 +25,9 @@
     {
       "attributes": {
         "crossorigin": "anonymous",
-        "href": "https://trcyc.github.io/Login_1.3/assets/shared/style.JgTHy9b_.css",
+        "href": "https://trcyc.github.io/Login_1.3/assets/shared/style.DW76d1Ht.css",
         "integrity": [
-          "sha256-pyPtI5tOFkRjhENHA0q3qikIpHlT/IYDl3urHl1JaLc="
+          "sha256-WJpHltNED58c6tCksBTGqDJP6jTtM1zUcFiH8nvbud8="
         ],
         "rel": "stylesheet"
       },

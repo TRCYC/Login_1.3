@@ -17,8 +17,9 @@ It exists separately from `Web/auth0/universal-login-template.html` because the 
 - `src/App.jsx`: selects the Context Inspector or production screen manager.
 - `src/DevScreenManager.jsx`: waits for local Context Inspector data before loading the login SDK.
 - `src/ProdScreenManager.jsx`: waits for the Auth0 page context before loading the login screen.
+- `src/components/RcycPageShell.jsx`: shared RCYC page shell, header, alert, and field primitives for login, signup, and reset screens.
 - `src/screens/login/index.jsx`: Auth0 `login` screen and SDK-backed form behavior.
-- `src/styles.css`: desktop/mobile RCYC styling.
+- `src/styles.css`: shared RCYC typography, form controls, buttons, footer, responsive, and accessibility styling.
 - `public/manifest.json`: Universal Login Context Inspector screen map.
 - `public/screens/login/login/default.json`: sanitized Local-app preview context.
 - `config/login-rendering.json`: deployable rendering configuration template with placeholders.
@@ -59,6 +60,14 @@ Keep `--screens login` in the command. If the screen filter is omitted, the Auth
 Use the inspector's local context source and select the `login` screen. The fixture under `public/screens/login/login/default.json` represents the Local application and includes signup only for visual parity with the supplied Figma reference. The Auth0 tenant configuration remains authoritative for whether signup is available.
 
 The entry point first loads the Context Inspector manager and only loads `@auth0/auth0-acul-react/login` after `window.universal_login_context` is available. This ordering is required by the ACUL SDK. If a browser tab from an earlier build is blank, close it and restart the command so the latest assets are served.
+
+### Login behavior
+
+The login screen calls the ACUL manager as an object (`loginManager.login(...)`). The method must remain bound to its manager because the SDK reads the active transaction from `this.transaction`.
+
+The Remember Me checkbox is retained for the approved RCYC layout, but it is intentionally not sent in the login payload. ACUL 1.7.0 documents `rememberDevice` for MFA/device-challenge screens, not a login-level Remember Me option. The page does not store passwords, Auth0 tokens, or a remembered-email value; Auth0 controls the authentication-session lifetime. Do not add undocumented fields such as `ulp-remember-me` unless Auth0 provides and the team approves a supported login contract.
+
+Auth0 owns navigation after login submission, browser refresh, back navigation, and transaction expiry. The page preserves Auth0-provided reset/signup links and displays a safe retry message for internal runtime errors. Expired transaction errors expose a Refresh action so the browser can request a fresh Auth0 context.
 
 The local Context Inspector works without a tenant. The CLI connected-mode server uses `http://localhost:55444`, but the real Auth0 authorization page is HTTPS; browsers block those injected module scripts as mixed content. Therefore a white page in the real authorization flow is expected with direct connected mode in normal browsers. Use an HTTPS tunnel for live integration testing, or use the permanent public CDN flow below. Do not disable browser security as a workaround.
 

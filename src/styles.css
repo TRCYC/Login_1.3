@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Caslon+Text&family=Mulish:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
 :root {
   --rcyc-ink: #1c1c1c;
   --rcyc-muted: #777777;
@@ -5,8 +7,8 @@
   --rcyc-error: #b94a48;
   --rcyc-rule: #9a9a9a;
   --rcyc-page: #ffffff;
-  --rcyc-body-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --rcyc-display-font: "Big Caslon", "Iowan Old Style", Baskerville, Georgia, "Times New Roman", serif;
+  --rcyc-body-font: "Mulish", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --rcyc-display-font: "Libre Caslon Text", "Iowan Old Style", Baskerville, Georgia, "Times New Roman", serif;
 }
 
 *,
@@ -57,18 +59,22 @@ input:focus-visible {
   min-height: 100svh;
 }
 
-.rcyc-login-stage {
+.rcyc-page-main {
+  min-width: 0;
+}
+
+.rcyc-auth-stage {
   display: flex;
   justify-content: center;
   width: 100%;
   padding: 47px 24px 72px;
 }
 
-.rcyc-login-column {
+.rcyc-form-column {
   width: min(100%, 520px);
 }
 
-.rcyc-header {
+.rcyc-auth-header {
   text-align: center;
 }
 
@@ -80,7 +86,7 @@ input:focus-visible {
   object-fit: contain;
 }
 
-.rcyc-header h1 {
+.rcyc-auth-header h1 {
   margin: 0 0 96px;
   color: var(--rcyc-ink);
   font-family: var(--rcyc-display-font);
@@ -92,6 +98,10 @@ input:focus-visible {
 }
 
 .rcyc-alert {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
   margin: -55px 0 31px;
   border: 1px solid var(--rcyc-error);
   color: var(--rcyc-error);
@@ -100,7 +110,24 @@ input:focus-visible {
   padding: 13px 15px;
 }
 
-.rcyc-login-form {
+.rcyc-alert-action {
+  flex: 0 0 auto;
+}
+
+.rcyc-alert-refresh {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-transform: uppercase;
+}
+
+.rcyc-form {
   width: 100%;
 }
 
@@ -164,7 +191,7 @@ input:focus-visible {
   margin-bottom: 12px;
 }
 
-.rcyc-login-meta {
+.rcyc-form-meta {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -214,7 +241,7 @@ input:focus-visible {
   text-underline-offset: 2px;
 }
 
-.rcyc-actions {
+.rcyc-form-actions {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -263,6 +290,17 @@ input:focus-visible {
   animation: rcyc-spin 0.8s linear infinite;
 }
 
+.rcyc-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .rcyc-footer {
   width: calc(100% - 120px);
   max-width: 1180px;
@@ -303,7 +341,7 @@ input:focus-visible {
 }
 
 @media (max-width: 600px) {
-  .rcyc-login-stage {
+  .rcyc-auth-stage {
     padding: 74px 20px 46px;
   }
 
@@ -313,17 +351,18 @@ input:focus-visible {
     margin-bottom: 54px;
   }
 
-  .rcyc-header {
+  .rcyc-auth-header {
     text-align: left;
   }
 
-  .rcyc-header h1 {
+  .rcyc-auth-header h1 {
     margin-bottom: 255px;
     font-size: 41px;
     line-height: 1.45;
   }
 
   .rcyc-alert {
+    align-items: flex-start;
     margin: -221px 0 34px;
     font-size: 20px;
     line-height: 1.52;
@@ -355,7 +394,7 @@ input:focus-visible {
     margin: -20px 0 58px;
   }
 
-  .rcyc-login-meta {
+  .rcyc-form-meta {
     display: block;
     margin: -2px 0 43px;
     font-size: 20px;
@@ -382,7 +421,7 @@ input:focus-visible {
     display: inline-block;
   }
 
-  .rcyc-actions {
+  .rcyc-form-actions {
     display: grid;
     gap: 16px;
   }

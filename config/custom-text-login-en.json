@@ -7,6 +7,8 @@
     "emailPlaceholder": "Login email",
     "usernamePlaceholder": "Login email",
     "passwordPlaceholder": "Password",
+    "invalid-email-username": "Please enter a valid email address.",
+    "no-password": "Please enter a password.",
     "forgotPasswordText": "FORGOT PASSWORD?",
     "signupActionLinkText": "CREATE AN ACCOUNT",
     "logoAltText": "The Ritz-Carlton Yacht Collection",

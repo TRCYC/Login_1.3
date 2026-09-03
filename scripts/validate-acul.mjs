@@ -10,6 +10,7 @@ const requiredFiles = [
   'src/App.jsx',
   'src/DevScreenManager.jsx',
   'src/ProdScreenManager.jsx',
+  'src/components/RcycPageShell.jsx',
   'src/screens/login/index.jsx',
   'src/styles.css',
   'public/manifest.json',
@@ -58,8 +59,12 @@ if (!packageJson.scripts?.['dev:login'] || !packageJson.scripts?.['dev:connected
   failures.push('package scripts must provide explicit login and connected-mode commands');
 }
 
-if (!source.includes('useLogin') || !source.includes('await login(')) {
-  failures.push('login screen must submit through the Auth0 ACUL login method');
+if (!source.includes('useLogin') || !source.includes('await loginManager.login(')) {
+  failures.push('login screen must submit through the bound Auth0 ACUL login manager');
+}
+
+if (source.includes('const { login } = useLogin()')) {
+  failures.push('login manager methods must not be destructured because ACUL methods use their instance context');
 }
 
 if (!source.includes('resetPasswordLink') || !source.includes('signupLink')) {
@@ -82,7 +87,19 @@ if (source.includes('ulp-remember-me')) {
   failures.push('login payload must not send the undocumented ulp-remember-me field');
 }
 
-for (const token of ['--rcyc-ink', '--rcyc-display-font', '.rcyc-footer', '@media (max-width: 600px)', 'prefers-reduced-motion']) {
+for (const token of [
+  '--rcyc-ink',
+  '--rcyc-display-font',
+  'Libre Caslon Text',
+  'Mulish',
+  '.rcyc-page-shell',
+  '.rcyc-field',
+  '.rcyc-button',
+  '.rcyc-alert',
+  '.rcyc-footer',
+  '@media (max-width: 600px)',
+  'prefers-reduced-motion',
+]) {
   if (!styles.includes(token)) {
     failures.push(`missing visual/accessibility CSS token or rule: ${token}`);
   }
