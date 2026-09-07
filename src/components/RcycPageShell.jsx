@@ -9,6 +9,7 @@ export function RcycPageShell({
   children,
   labelledBy,
   privacyUrl = FALLBACK_PRIVACY_URL,
+  privacyTarget = '_self',
   legalCopy = RCYC_LEGAL_COPY,
 }) {
   return (
@@ -20,7 +21,7 @@ export function RcycPageShell({
       <footer className="rcyc-footer">
         <div className="rcyc-footer-topline">
           <p>&copy; {new Date().getFullYear()} The Ritz-Carlton Yacht Collection. All Rights Reserved.</p>
-          <a href={privacyUrl}>Your privacy rights</a>
+          <a href={privacyUrl} target={privacyTarget} rel={privacyTarget === '_blank' ? 'noreferrer' : undefined}>Your privacy rights</a>
         </div>
         <p>{legalCopy}</p>
       </footer>

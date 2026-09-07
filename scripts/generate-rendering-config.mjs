@@ -4,10 +4,15 @@ import { resolve } from 'node:path';
 
 const projectRoot = resolve(new URL('..', import.meta.url).pathname);
 const baseUrl = process.env.ACUL_PUBLIC_BASE_URL || process.argv[2];
-const clientId = '8wxI3w8yllBrMuv2OQbCuraVJI6gyf4g';
+const clientId = process.env.AUTH0_CLIENT_ID || process.env.ACUL_CLIENT_ID;
 
 if (!baseUrl) {
   console.error('Set ACUL_PUBLIC_BASE_URL to the public HTTPS URL hosting the dist directory.');
+  process.exit(1);
+}
+
+if (!clientId) {
+  console.error('Set AUTH0_CLIENT_ID to the application client ID that should receive the ACUL rendering configuration.');
   process.exit(1);
 }
 
@@ -37,10 +42,16 @@ function findAsset(directory, prefix, extension) {
   return null;
 }
 
-const assetsDirectory = resolve(projectRoot, 'dist/assets');
+const distDirectory = resolve(projectRoot, 'dist');
+const assetsDirectory = resolve(distDirectory, 'assets');
+const indexHtml = readFileSync(resolve(distDirectory, 'index.html'), 'utf8');
+const currentScriptName = indexHtml.match(/(?:\.\/)?assets\/(main\.[^"'\s]+\.js)/)?.[1];
+const currentStylesheetName = indexHtml.match(/(?:\.\/)?assets\/(shared\/style\.[^"'\s]+\.css)/)?.[1];
 const assetPaths = {
-  script: findAsset(assetsDirectory, 'main.', '.js'),
-  stylesheet: findAsset(assetsDirectory, 'style.', '.css'),
+  // Vite's index.html is authoritative when previous hashed assets are kept
+  // beside the current bundle for rollback safety.
+  script: currentScriptName ? resolve(assetsDirectory, currentScriptName) : findAsset(assetsDirectory, 'main.', '.js'),
+  stylesheet: currentStylesheetName ? resolve(assetsDirectory, currentStylesheetName) : findAsset(assetsDirectory, 'style.', '.css'),
 };
 
 for (const [assetName, assetPath] of Object.entries(assetPaths)) {
@@ -52,8 +63,8 @@ for (const [assetName, assetPath] of Object.entries(assetPaths)) {
 
 const sri = (assetPath) => `sha256-${createHash('sha256').update(readFileSync(assetPath)).digest('base64')}`;
 const normalizedBaseUrl = baseUrl.replace(/\/$/, '');
-const assetUrl = (assetPath) => `${normalizedBaseUrl}/${assetPath.slice(resolve(projectRoot, 'dist').length + 1)}`;
-const renderingConfig = {
+const assetUrl = (assetPath) => `${normalizedBaseUrl}/${assetPath.slice(distDirectory.length + 1)}`;
+const createRenderingConfig = () => ({
   rendering_mode: 'advanced',
   head_tags: [
     {
@@ -81,16 +92,20 @@ const renderingConfig = {
     'branding.settings',
     'client.logo_uri',
     'screen.texts',
+    'country_codes',
   ],
   use_page_template: false,
   filters: {
     match_type: 'includes_any',
     clients: [{ id: clientId }],
   },
-};
+});
 
-const outputPath = resolve(projectRoot, 'config/login-rendering.generated.json');
-writeFileSync(outputPath, `${JSON.stringify(renderingConfig, null, 2)}\n`);
-console.log(`Generated ${outputPath}`);
-console.log(`Script SRI: ${renderingConfig.head_tags[0].attributes.integrity}`);
-console.log(`Stylesheet SRI: ${renderingConfig.head_tags[1].attributes.integrity}`);
+for (const screen of ['login', 'signup']) {
+  const renderingConfig = createRenderingConfig();
+  const outputPath = resolve(projectRoot, `config/${screen}-rendering.generated.json`);
+  writeFileSync(outputPath, `${JSON.stringify(renderingConfig, null, 2)}\n`);
+  console.log(`Generated ${outputPath}`);
+  console.log(`Script SRI: ${renderingConfig.head_tags[0].attributes.integrity}`);
+  console.log(`Stylesheet SRI: ${renderingConfig.head_tags[1].attributes.integrity}`);
+}

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 
 const LoginScreen = lazy(() => import('./screens/login/index.jsx'));
+const SignupScreen = lazy(() => import('./screens/signup/index.jsx'));
 
 function getScreenName() {
   return window.universal_login_context?.screen?.name || '';
@@ -30,12 +31,14 @@ export default function ProdScreenManager() {
   }
 
   if (screenName !== 'login') {
-    return <div className="rcyc-runtime-status">Screen "{screenName}" is not implemented.</div>;
+    if (screenName !== 'signup') {
+      return <div className="rcyc-runtime-status">Screen "{screenName}" is not implemented.</div>;
+    }
   }
 
   return (
-    <Suspense fallback={<div className="rcyc-runtime-status">Loading login screen...</div>}>
-      <LoginScreen key={screenName} />
+    <Suspense fallback={<div className="rcyc-runtime-status">Loading {screenName} screen...</div>}>
+      {screenName === 'login' ? <LoginScreen key={screenName} /> : <SignupScreen key={screenName} />}
     </Suspense>
   );
 }

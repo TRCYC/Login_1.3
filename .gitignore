@@ -1,2 +1,3 @@
 node_modules/
 config/login-rendering.generated.json
+config/signup-rendering.generated.json

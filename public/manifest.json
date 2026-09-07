@@ -6,6 +6,12 @@
           "path": "/screens/login/login",
           "variants": ["default"]
         }
+      },
+      "signup": {
+        "signup": {
+          "path": "/screens/signup/signup",
+          "variants": ["default"]
+        }
       }
     }
   ]

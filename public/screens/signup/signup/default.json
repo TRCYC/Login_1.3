@@ -1,0 +1,69 @@
+{
+  "client": {
+    "id": "8wxI3w8yllBrMuv2OQbCuraVJI6gyf4g",
+    "name": "RCYC Web Guest Login - Local",
+    "logo_uri": "https://www.ritzcarltonyachtcollection.com/assets/components/images/logo.svg"
+  },
+  "prompt": {
+    "name": "signup"
+  },
+  "screen": {
+    "name": "signup",
+    "links": {
+      "login": "/u/login?state=LOCAL_PREVIEW_STATE",
+      "reset_password": "/u/login/password-reset-start/rcyc-reservation-staging?state=LOCAL_PREVIEW_STATE"
+    },
+    "texts": {
+      "pageTitle": "Create account | ${clientName}",
+      "title": "CREATE YOUR ACCOUNT",
+      "buttonText": "CREATE ACCOUNT",
+      "loginLinkText": "Already have an account? SIGN IN",
+      "logoAltText": "The Ritz-Carlton Yacht Collection",
+      "user-exists": "An account with this email address already exists. Please sign in, or reset your password."
+    },
+    "loginLink": "/u/login?state=LOCAL_PREVIEW_STATE"
+  },
+  "tenant": {
+    "name": "dev-t63fs8uohee0yl4k",
+    "friendly_name": "The Ritz-Carlton Yacht Collection"
+  },
+  "transaction": {
+    "state": "LOCAL_PREVIEW_STATE",
+    "locale": "en",
+    "connectionStrategy": "auth0",
+    "requiredIdentifiers": ["email"],
+    "optionalIdentifiers": [],
+    "passwordPolicy": {
+      "minLength": 7,
+      "policy": "good"
+    },
+    "passwordComplexityPolicy": {
+      "character_type_rule": "at_least",
+      "character_types": ["uppercase", "lowercase", "number", "special"],
+      "min_length": 7,
+      "identical_characters": "allow",
+      "sequential_characters": "allow",
+      "max_length_exceeded": "error"
+    },
+    "errors": null
+  },
+  "country_codes": {
+    "recommended": "US",
+    "available": [
+      { "code": "AU", "label": "Australia", "dial_code": "+61" },
+      { "code": "CA", "label": "Canada", "dial_code": "+1" },
+      { "code": "GB", "label": "United Kingdom", "dial_code": "+44" },
+      { "code": "US", "label": "United States", "dial_code": "+1" }
+    ]
+  },
+  "branding": {
+    "settings": {
+      "logo_url": "https://www.ritzcarltonyachtcollection.com/assets/components/images/logo.svg"
+    }
+  },
+  "untrusted_data": {
+    "authorization_params": {
+      "login_hint": ""
+    }
+  }
+}

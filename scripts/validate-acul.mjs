@@ -12,10 +12,13 @@ const requiredFiles = [
   'src/ProdScreenManager.jsx',
   'src/components/RcycPageShell.jsx',
   'src/screens/login/index.jsx',
+  'src/screens/signup/index.jsx',
   'src/styles.css',
   'public/manifest.json',
   'public/screens/login/login/default.json',
+  'public/screens/signup/signup/default.json',
   'config/login-rendering.json',
+  'config/signup-rendering.json',
   'config/custom-text-login-en.json',
 ];
 const failures = [];
@@ -35,6 +38,7 @@ const manifest = JSON.parse(read('public/manifest.json'));
 const renderingConfig = JSON.parse(read('config/login-rendering.json'));
 const customText = JSON.parse(read('config/custom-text-login-en.json'));
 const source = read('src/screens/login/index.jsx');
+const signupSource = read('src/screens/signup/index.jsx');
 const bootstrapSource = read('src/main.jsx');
 const managerSource = `${read('src/App.jsx')}\n${read('src/DevScreenManager.jsx')}\n${read('src/ProdScreenManager.jsx')}`;
 const styles = read('src/styles.css');
@@ -48,6 +52,7 @@ const validContextPaths = new Set([
   'tenant.friendly_name',
   'tenant.name',
   'transaction.custom_domain.domain',
+  'country_codes',
   'untrusted_data.authorization_params.login_hint',
 ]);
 
@@ -87,6 +92,18 @@ if (source.includes('ulp-remember-me')) {
   failures.push('login payload must not send the undocumented ulp-remember-me field');
 }
 
+if (!signupSource.includes('useSignup') || !signupSource.includes('await signupManager.signup(')) {
+  failures.push('signup screen must submit through the bound Auth0 signup manager');
+}
+
+if (signupSource.includes('const { signup } = useSignup()')) {
+  failures.push('signup manager methods must not be destructured because ACUL methods use their instance context');
+}
+
+if (/fetch\s*\(|XMLHttpRequest|localStorage|sessionStorage/i.test(signupSource)) {
+  failures.push('signup screen must not implement direct backend calls or browser storage');
+}
+
 for (const token of [
   '--rcyc-ink',
   '--rcyc-display-font',
@@ -97,6 +114,9 @@ for (const token of [
   '.rcyc-button',
   '.rcyc-alert',
   '.rcyc-footer',
+  '.rcyc-signup-grid',
+  '.rcyc-signup-disclaimer',
+  '.rcyc-marketing-preferences',
   '@media (max-width: 600px)',
   'prefers-reduced-motion',
 ]) {
@@ -109,6 +129,10 @@ if (manifest.screens?.[0]?.login?.login?.path !== '/screens/login/login') {
   failures.push('manifest must expose the login/login context fixture');
 }
 
+if (manifest.screens?.[0]?.signup?.signup?.path !== '/screens/signup/signup') {
+  failures.push('manifest must expose the signup/signup context fixture');
+}
+
 if (renderingConfig.rendering_mode !== 'advanced') {
   failures.push('rendering config must use advanced mode for ACUL');
 }
@@ -117,12 +141,25 @@ if (renderingConfig.use_page_template !== false) {
   failures.push('ACUL must own the full page layout so the Standard template does not wrap it');
 }
 
+const signupRenderingConfig = JSON.parse(read('config/signup-rendering.json'));
+if (signupRenderingConfig.rendering_mode !== 'advanced') {
+  failures.push('signup rendering config must use advanced mode for ACUL');
+}
+
+if (signupRenderingConfig.use_page_template !== false) {
+  failures.push('signup ACUL must own the full page layout so the Standard template does not wrap it');
+}
+
 if (renderingConfig.head_tags?.some((headTag) => headTag.attributes?.src?.startsWith('http://') || headTag.attributes?.href?.startsWith('http://'))) {
   failures.push('checked-in ACUL rendering template must not use HTTP asset URLs; use HTTPS CDN or tunnel URLs');
 }
 
-if (renderingConfig.filters?.clients?.[0]?.id !== '8wxI3w8yllBrMuv2OQbCuraVJI6gyf4g') {
-  failures.push('rendering config must be filtered to RCYC Web Guest Login - Local');
+if (renderingConfig.filters?.clients?.[0]?.id !== 'REPLACE_WITH_AUTH0_CLIENT_ID') {
+  failures.push('rendering config template must require an environment-specific Auth0 client ID');
+}
+
+if (signupRenderingConfig.filters?.clients?.[0]?.id !== 'REPLACE_WITH_AUTH0_CLIENT_ID') {
+  failures.push('signup rendering config template must require an environment-specific Auth0 client ID');
 }
 
 for (const contextPath of renderingConfig.context_configuration || []) {
@@ -132,16 +169,22 @@ for (const contextPath of renderingConfig.context_configuration || []) {
 }
 
 if (existsSync(generatedRenderingPath)) {
-  const generatedRenderingConfig = JSON.parse(readFileSync(generatedRenderingPath, 'utf8'));
-  for (const contextPath of generatedRenderingConfig.context_configuration || []) {
-    if (!validContextPaths.has(contextPath)) {
-      failures.push(`invalid generated Auth0 context_configuration path: ${contextPath}`);
+  for (const generatedPath of [
+    generatedRenderingPath,
+    resolve(projectRoot, 'config/signup-rendering.generated.json'),
+  ]) {
+    if (!existsSync(generatedPath)) continue;
+    const generatedRenderingConfig = JSON.parse(readFileSync(generatedPath, 'utf8'));
+    for (const contextPath of generatedRenderingConfig.context_configuration || []) {
+      if (!validContextPaths.has(contextPath)) {
+        failures.push(`invalid generated Auth0 context_configuration path: ${contextPath}`);
+      }
     }
-  }
-  for (const headTag of generatedRenderingConfig.head_tags || []) {
-    const integrity = headTag.attributes?.integrity;
-    if (!Array.isArray(integrity) || integrity.length === 0 || integrity.some((hash) => !/^sha(256|384|512)-\S+$/.test(hash))) {
-      failures.push('generated rendering config must contain SRI hashes as an array');
+    for (const headTag of generatedRenderingConfig.head_tags || []) {
+      const integrity = headTag.attributes?.integrity;
+      if (!Array.isArray(integrity) || integrity.length === 0 || integrity.some((hash) => !/^sha(256|384|512)-\S+$/.test(hash))) {
+        failures.push('generated rendering config must contain SRI hashes as an array');
+      }
     }
   }
 }

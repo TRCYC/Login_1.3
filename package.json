@@ -12,7 +12,9 @@
     "build:rendering": "npm run build && node scripts/generate-rendering-config.mjs",
     "dev": "vite --host 0.0.0.0 --port 55444",
     "dev:login": "auth0 acul dev --tenant dev-t63fs8uohee0yl4k.us.auth0.com --port 55444 --screens login",
+    "dev:signup": "auth0 acul dev --tenant dev-t63fs8uohee0yl4k.us.auth0.com --port 55444 --screens signup",
     "dev:connected": "auth0 acul dev --connected --tenant dev-t63fs8uohee0yl4k.us.auth0.com --port 55444 --screens login",
+    "dev:connected-signup": "auth0 acul dev --connected --tenant dev-t63fs8uohee0yl4k.us.auth0.com --port 55444 --screens signup",
     "preview": "vite preview --host 0.0.0.0",
     "validate": "node scripts/validate-acul.mjs"
   },

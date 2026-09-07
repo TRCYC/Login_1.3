@@ -5,6 +5,7 @@ import {
 } from '@auth0/ul-context-inspector';
 
 const LoginScreen = lazy(() => import('./screens/login/index.jsx'));
+const SignupScreen = lazy(() => import('./screens/signup/index.jsx'));
 
 export default function DevScreenManager() {
   const context = useUniversalLoginContextSubscription();
@@ -16,6 +17,10 @@ export default function DevScreenManager() {
       {screenName === 'login' ? (
         <Suspense fallback={<div className="rcyc-runtime-status">Loading login screen...</div>}>
           <LoginScreen key={screenName} />
+        </Suspense>
+      ) : screenName === 'signup' ? (
+        <Suspense fallback={<div className="rcyc-runtime-status">Loading signup screen...</div>}>
+          <SignupScreen key={screenName} />
         </Suspense>
       ) : (
         <div className="rcyc-runtime-status">
