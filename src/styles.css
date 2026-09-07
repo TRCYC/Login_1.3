@@ -79,11 +79,11 @@ input:focus-visible {
 }
 
 .rcyc-signup-column {
-  width: min(100%, 760px);
+  width: min(100%, 784px);
 }
 
 .rcyc-signup-column .rcyc-auth-header h1 {
-  margin-bottom: 58px;
+  margin-bottom: 52px;
 }
 
 .rcyc-auth-header {
@@ -273,76 +273,128 @@ input:focus-visible {
 }
 
 .rcyc-signup-form .rcyc-field {
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .rcyc-signup-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 32px;
+  column-gap: 16px;
+}
+
+.rcyc-signup-form .rcyc-field label {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.rcyc-signup-form .rcyc-field input,
+.rcyc-signup-form .rcyc-field select {
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid var(--rcyc-rule);
+  border-radius: 0;
+  font-size: 13px;
+}
+
+.rcyc-signup-form .rcyc-field select {
+  padding-right: 28px;
+  background-position: calc(100% - 13px) 17px, calc(100% - 8px) 17px;
+}
+
+.rcyc-signup-form .rcyc-field input:focus,
+.rcyc-signup-form .rcyc-field select:focus {
+  border: 1px solid var(--rcyc-ink);
+  box-shadow: 0 0 0 1px var(--rcyc-ink);
+}
+
+.rcyc-signup-form .rcyc-field.has-error input,
+.rcyc-signup-form .rcyc-field.has-error select {
+  border: 1px solid var(--rcyc-error);
+  box-shadow: none;
 }
 
 .rcyc-phone-input {
   display: grid;
-  grid-template-columns: minmax(118px, 0.28fr) minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.rcyc-signup-phone-row > .rcyc-field {
+  grid-column: 1;
 }
 
 .rcyc-phone-input select {
   min-width: 0;
-  padding-right: 18px;
-  border: 0;
-  border-bottom: 1px solid var(--rcyc-rule);
+  min-height: 40px;
+  padding: 8px 22px 8px 8px;
+  border: 1px solid var(--rcyc-rule);
   border-radius: 0;
   background-color: transparent;
   background-image: linear-gradient(45deg, transparent 50%, var(--rcyc-ink) 50%), linear-gradient(135deg, var(--rcyc-ink) 50%, transparent 50%);
-  background-position: calc(100% - 7px) 7px, calc(100% - 2px) 7px;
+  background-position: calc(100% - 13px) 17px, calc(100% - 8px) 17px;
   background-repeat: no-repeat;
   background-size: 5px 5px, 5px 5px;
   color: var(--rcyc-ink);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   outline: 0;
 }
 
 .rcyc-phone-input select:focus {
-  border-bottom: 2px solid var(--rcyc-ink);
+  border: 1px solid var(--rcyc-ink);
+  box-shadow: 0 0 0 1px var(--rcyc-ink);
 }
 
 .rcyc-marketing-preferences {
-  margin: 4px 0 30px;
+  margin: 0 0 25px;
   padding: 0;
   border: 0;
 }
 
 .rcyc-marketing-preferences legend {
-  margin-bottom: 14px;
+  margin-bottom: 13px;
   padding: 0;
   color: var(--rcyc-ink);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .rcyc-checkbox-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 120px 16px auto;
+  align-items: center;
+  column-gap: 8px;
+  margin-bottom: 10px;
   color: var(--rcyc-ink);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .rcyc-checkbox-row input {
-  flex: 0 0 auto;
+  grid-column: 2;
   width: 16px;
   height: 16px;
-  margin: 1px 0 0;
+  margin: 0;
   accent-color: var(--rcyc-ink);
 }
 
+.rcyc-checkbox-label {
+  grid-column: 1;
+}
+
+.rcyc-checkbox-row > span:last-child {
+  grid-column: 3;
+}
+
+.rcyc-signup-support {
+  margin: 0 0 7px;
+  color: var(--rcyc-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .rcyc-signup-disclaimer {
-  margin: 0 0 31px;
+  margin: 0 0 28px;
   color: var(--rcyc-muted);
   font-size: 11px;
   line-height: 1.55;
@@ -363,6 +415,11 @@ input:focus-visible {
 
 .rcyc-signup-actions {
   margin-bottom: 8px;
+}
+
+.rcyc-signup-actions .rcyc-button-primary {
+  min-width: 200px;
+  min-height: 40px;
 }
 
 .rcyc-button {
@@ -554,39 +611,57 @@ input:focus-visible {
   }
 
   .rcyc-phone-input {
-    grid-template-columns: minmax(112px, 0.35fr) minmax(0, 1fr);
+    grid-template-columns: 82px minmax(0, 1fr);
     gap: 10px;
   }
 
+  .rcyc-signup-form .rcyc-field label {
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .rcyc-signup-form .rcyc-field input,
+  .rcyc-signup-form .rcyc-field select,
   .rcyc-phone-input select {
-    font-size: 20px;
+    font-size: 14px;
+  }
+
+  .rcyc-signup-form .rcyc-field input,
+  .rcyc-signup-form .rcyc-field select,
+  .rcyc-phone-input select {
+    min-height: 42px;
   }
 
   .rcyc-marketing-preferences {
-    margin-top: 4px;
+    margin-top: 0;
     margin-bottom: 40px;
   }
 
   .rcyc-marketing-preferences legend,
   .rcyc-checkbox-row {
-    font-size: 18px;
+    font-size: 14px;
   }
 
   .rcyc-checkbox-row {
-    gap: 10px;
-    margin-bottom: 17px;
+    grid-template-columns: 120px 20px auto;
+    column-gap: 10px;
+    margin-bottom: 14px;
   }
 
   .rcyc-checkbox-row input {
     width: 24px;
     height: 24px;
-    margin-top: 0;
   }
 
+  .rcyc-signup-support,
   .rcyc-signup-disclaimer {
     margin-bottom: 38px;
-    font-size: 15px;
-    line-height: 1.7;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .rcyc-signup-support {
+    margin-bottom: 7px;
   }
 
   .rcyc-error-links {

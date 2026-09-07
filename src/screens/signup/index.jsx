@@ -38,9 +38,10 @@ const copy = {
   passwordPlaceholder: 'Password',
   confirmPasswordLabel: 'Confirm Password',
   confirmPasswordPlaceholder: 'Confirm Password',
-  phoneMarketing: 'I would like to receive marketing communications by phone.',
-  emailMarketing: 'I would like to receive marketing communications by email.',
-  postalMarketing: 'I would like to receive marketing communications by postal mail.',
+  phoneMarketing: 'Phone Number',
+  emailMarketing: 'Email',
+  postalMarketing: 'Postal Mail',
+  marketingOptIn: 'Opt In',
   createAccount: 'CREATE ACCOUNT',
   signIn: 'Already have an account? SIGN IN',
   emailInvalid: 'Please enter a valid email address.',
@@ -100,7 +101,10 @@ function normalizeCountries(countryCodes) {
     : FALLBACK_COUNTRIES;
   const seen = new Set();
 
-  return source.filter((country) => {
+  return source.map((country) => ({
+    ...country,
+    dialCode: country.dialCode || country.dial_code || '',
+  })).filter((country) => {
     const key = `${country.code}-${country.dialCode}`;
     if (!country.code || seen.has(key)) return false;
     seen.add(key);
@@ -151,6 +155,9 @@ function SignupScreen() {
   const texts = screen?.texts || {};
   const countries = useMemo(() => normalizeCountries(countryCodes), [countryCodes]);
   const recommendedCountry = countryCodes?.recommended || 'US';
+  const defaultPhoneCountry = countries.some((country) => country.code === 'US')
+    ? 'US'
+    : recommendedCountry;
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [countryOfResidence, setCountryOfResidence] = useState('');
@@ -158,7 +165,7 @@ function SignupScreen() {
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [phoneCountryCode, setPhoneCountryCode] = useState(recommendedCountry);
+  const [phoneCountryCode, setPhoneCountryCode] = useState(defaultPhoneCountry);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [marketing, setMarketing] = useState({ phone: false, email: false, postalMail: false });
@@ -170,7 +177,6 @@ function SignupScreen() {
   const privacyUrl = client?.metadata?.privacy_url || FALLBACK_PRIVACY_URL;
   const loginLink = screen?.loginLink || screen?.links?.login;
   const resetPasswordLink = screen?.links?.reset_password;
-  const selectedPhoneCountry = countries.find((country) => country.code === phoneCountryCode);
   const countryRequiresPostalCode = countryOfResidence === 'US' || countryOfResidence === 'CA';
 
   const values = {
@@ -222,10 +228,10 @@ function SignupScreen() {
   }, [client?.name, tenant?.friendlyName, texts]);
 
   useEffect(() => {
-    if (!countryOfResidence && countries.some((country) => country.code === recommendedCountry)) {
-      setPhoneCountryCode(recommendedCountry);
+    if (!countryOfResidence && countries.some((country) => country.code === defaultPhoneCountry)) {
+      setPhoneCountryCode(defaultPhoneCountry);
     }
-  }, [countries, countryOfResidence, recommendedCountry]);
+  }, [countries, countryOfResidence, defaultPhoneCountry]);
 
   const clearErrors = () => {
     setSubmitError('');
@@ -292,6 +298,7 @@ function SignupScreen() {
   };
 
   const visibleFieldError = (field) => touched[field] ? errors[field] : '';
+  const formIsValid = Object.values(errors).every((error) => !error);
 
   return (
     <RcycPageShell labelledBy="rcyc-signup-title" privacyUrl={privacyUrl || FALLBACK_PRIVACY_URL} privacyTarget="_blank">
@@ -300,7 +307,7 @@ function SignupScreen() {
           <RcycAuthHeader
             logoUrl={logoUrl || FALLBACK_LOGO}
             logoAlt={getText(texts, 'logoAltText', 'The Ritz-Carlton Yacht Collection')}
-            title={getText(texts, 'title', copy.title)}
+            title={copy.title}
             titleId="rcyc-signup-title"
           />
 
@@ -329,7 +336,7 @@ function SignupScreen() {
 
           <form className="rcyc-form rcyc-signup-form" onSubmit={handleSubmit} noValidate>
             <div className="rcyc-signup-grid">
-              <RcycField id="rcyc-signup-first-name" label={copy.firstNameLabel} error={visibleFieldError('firstName')}>
+              <RcycField id="rcyc-signup-first-name" label={`${copy.firstNameLabel} *`} error={visibleFieldError('firstName')}>
                 <input
                   ref={firstNameRef}
                   id="rcyc-signup-first-name"
@@ -345,7 +352,7 @@ function SignupScreen() {
                 />
               </RcycField>
 
-              <RcycField id="rcyc-signup-last-name" label={copy.lastNameLabel} error={visibleFieldError('lastName')}>
+              <RcycField id="rcyc-signup-last-name" label={`${copy.lastNameLabel} *`} error={visibleFieldError('lastName')}>
                 <input
                   ref={lastNameRef}
                   id="rcyc-signup-last-name"
@@ -381,7 +388,7 @@ function SignupScreen() {
                 </select>
               </RcycField>
 
-              <RcycField id="rcyc-signup-postal-code" label={`${copy.postalCodeLabel}${countryRequiresPostalCode ? ' *' : ''}`} error={visibleFieldError('postalCode')}>
+              <RcycField id="rcyc-signup-postal-code" label={`${copy.postalCodeLabel} *`} error={visibleFieldError('postalCode')}>
                 <input
                   id="rcyc-signup-postal-code"
                   name="postalCode"
@@ -428,36 +435,60 @@ function SignupScreen() {
               </RcycField>
             </div>
 
-            <RcycField id="rcyc-signup-phone" label={`${copy.phoneLabel} *`} error={visibleFieldError('phone')}>
-              <div className="rcyc-phone-input">
-                <select
-                  aria-label="Phone country code"
-                  value={phoneCountryCode}
-                  onChange={(event) => {
-                    setPhoneCountryCode(event.target.value);
-                    clearErrors();
-                  }}
-                >
-                  {countries.map((country) => (
-                    <option key={`${country.code}-${country.dialCode}-phone`} value={country.code}>
-                      {country.dialCode} ({country.code})
-                    </option>
-                  ))}
-                </select>
-                <input
-                  id="rcyc-signup-phone"
-                  name="phoneNumber"
-                  type="tel"
-                  autoComplete="tel-national"
-                  placeholder={`${selectedPhoneCountry?.dialCode || '+1'} ${copy.phonePlaceholder}`}
-                  value={phone}
-                  onChange={(event) => updateField('phone', setPhone, event.target.value)}
-                  onBlur={() => setTouched((current) => ({ ...current, phone: true }))}
-                  aria-invalid={Boolean(visibleFieldError('phone'))}
-                  aria-describedby={visibleFieldError('phone') ? 'rcyc-signup-phone-error' : undefined}
-                />
-              </div>
-            </RcycField>
+            <div className="rcyc-signup-grid rcyc-signup-phone-row">
+              <RcycField id="rcyc-signup-phone" label={`${copy.phoneLabel} *`} error={visibleFieldError('phone')}>
+                <div className="rcyc-phone-input">
+                  <select
+                    aria-label="Phone country code"
+                    value={phoneCountryCode}
+                    onChange={(event) => {
+                      setPhoneCountryCode(event.target.value);
+                      clearErrors();
+                    }}
+                  >
+                    {countries.map((country) => (
+                      <option key={`${country.code}-${country.dialCode}-phone`} value={country.code}>
+                        {country.dialCode}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    id="rcyc-signup-phone"
+                    name="phoneNumber"
+                    type="tel"
+                    autoComplete="tel-national"
+                    placeholder={copy.phonePlaceholder}
+                    value={phone}
+                    onChange={(event) => updateField('phone', setPhone, event.target.value)}
+                    onBlur={() => setTouched((current) => ({ ...current, phone: true }))}
+                    aria-invalid={Boolean(visibleFieldError('phone'))}
+                    aria-describedby={visibleFieldError('phone') ? 'rcyc-signup-phone-error' : undefined}
+                  />
+                </div>
+              </RcycField>
+            </div>
+
+            <fieldset className="rcyc-marketing-preferences">
+              <legend>Marketing Preferences</legend>
+              {[
+                ['phone', copy.phoneMarketing],
+                ['email', copy.emailMarketing],
+                ['postalMail', copy.postalMarketing],
+              ].map(([key, label]) => (
+                <label key={key} className="rcyc-checkbox-row">
+                  <span className="rcyc-checkbox-label">{label}</span>
+                  <input
+                    type="checkbox"
+                    checked={marketing[key]}
+                    onChange={(event) => {
+                      setMarketing((current) => ({ ...current, [key]: event.target.checked }));
+                      clearErrors();
+                    }}
+                  />
+                  <span>{copy.marketingOptIn}</span>
+                </label>
+              ))}
+            </fieldset>
 
             <div className="rcyc-signup-grid">
               <RcycField id="rcyc-signup-password" label={`${copy.passwordLabel} *`} error={visibleFieldError('password')}>
@@ -492,27 +523,7 @@ function SignupScreen() {
               </RcycField>
             </div>
 
-            <fieldset className="rcyc-marketing-preferences">
-              <legend>Marketing preferences (optional)</legend>
-              {[
-                ['phone', copy.phoneMarketing],
-                ['email', copy.emailMarketing],
-                ['postalMail', copy.postalMarketing],
-              ].map(([key, label]) => (
-                <label key={key} className="rcyc-checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={marketing[key]}
-                    onChange={(event) => {
-                      setMarketing((current) => ({ ...current, [key]: event.target.checked }));
-                      clearErrors();
-                    }}
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </fieldset>
-
+            <p className="rcyc-signup-support">Need assistance? <a href="/portalassistance">Find answers here.</a></p>
             <p className="rcyc-signup-disclaimer">
               By providing your email, residential telephone and/or mobile telephone number and submitting this form, you are acknowledging that you are over 18+ years of age and have read and agreed to the{' '}
               <a href="/legal/terms-conditions" target="_blank" rel="noreferrer">Terms and Conditions</a>{' '}
@@ -520,19 +531,13 @@ function SignupScreen() {
               <a href={privacyUrl || FALLBACK_PRIVACY_URL} target="_blank" rel="noreferrer">Privacy Policy</a>.
               {' '}By entering information on this form, you also acknowledge that you are providing it to The Ritz-Carlton Hotel Company, L.L.C. and Cruise Yacht OpCo Ltd and Next-Gen Cruises Ltd both doing business as The Ritz-Carlton Yacht Collection ("The Ritz-Carlton Yacht Collection") which uses The Ritz-Carlton marks under license from The Ritz-Carlton Hotel Company, L.L.C. RITZ® is a Registered Service Mark of The Ritz Hotel, Limited, Paris, and is used by The Ritz-Carlton Hotel Company under license. You also agree, to the extent you are or have been a Marriott International customer, that the Marriott Group may share any Personal Data, including Personal Preferences (as those terms are defined in the{' '}
               <a href="https://www.marriott.com/about/privacy.mi" target="_blank" rel="noreferrer">Marriott Group Global Privacy Statement</a>
-              {' '}) it has previously collected about you with The Ritz-Carlton Yacht Collection for purposes of marketing. By clicking the “Submit” button below you agree to receive recurring special offers, promotions and marketing calls and texts from The Ritz-Carlton Yacht Collection marketing program. Calls may be made, and messages may be sent, using an automatic telephone dialing system. Consent is not required as a condition of purchase.{' '}
-              <a href="/portalassistance">Find answers here</a>.
+              {' '}) it has previously collected about you with The Ritz-Carlton Yacht Collection for purposes of marketing. By clicking the “Submit” button below you agree to receive recurring special offers, promotions and marketing calls and texts from The Ritz-Carlton Yacht Collection marketing program. Calls may be made, and messages may be sent, using an automatic telephone dialing system. Consent is not required as a condition of purchase.
             </p>
 
             <div className="rcyc-form-actions rcyc-signup-actions">
-              <button className="rcyc-button rcyc-button-primary" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-                {isSubmitting ? <span className="rcyc-spinner" aria-label="Creating account" /> : getText(texts, 'buttonText', copy.createAccount)}
+              <button className="rcyc-button rcyc-button-primary" type="submit" disabled={isSubmitting || !formIsValid} aria-busy={isSubmitting}>
+                {isSubmitting ? <span className="rcyc-spinner" aria-label="Creating account" /> : copy.createAccount}
               </button>
-              {loginLink && (
-                <a className="rcyc-button rcyc-button-secondary" href={loginLink}>
-                  {getText(texts, 'loginLinkText', copy.signIn)}
-                </a>
-              )}
             </div>
           </form>
         </div>
